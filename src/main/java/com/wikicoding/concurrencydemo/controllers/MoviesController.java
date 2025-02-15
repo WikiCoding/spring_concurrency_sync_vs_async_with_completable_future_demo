@@ -9,7 +9,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentMap;
 
 @RestController
 @RequestMapping("/movies")
@@ -23,6 +25,11 @@ public class MoviesController {
         return ResponseEntity.ok(serviceSync.getAllMovies());
     }
 
+    @GetMapping("/sync/titles")
+    public ResponseEntity<List<String>> getAllTitles() {
+        return ResponseEntity.ok(serviceSync.getAllTitles());
+    }
+
     @PostMapping("/sync")
     public ResponseEntity<Movie> saveMovie(@RequestBody Movie movie) {
         return ResponseEntity.ok(serviceSync.saveMovie(movie));
@@ -32,9 +39,14 @@ public class MoviesController {
     public ResponseEntity<Iterable<Movie>> getAllMoviesAsync() {
         CompletableFuture<Iterable<Movie>> movieCompletableFuture = serviceAsync.getAllMovies();
 
-        Iterable<Movie> movies = movieCompletableFuture.join();
+        return ResponseEntity.ok(movieCompletableFuture.join());
+    }
 
-        return ResponseEntity.ok(movies);
+    @GetMapping("/async/titles")
+    public ResponseEntity<ConcurrentMap<Long, String>> getAllTitlesAsync() {
+        CompletableFuture<ConcurrentMap<Long, String>> movieCompletableFuture = serviceAsync.getAllTitles();
+
+        return ResponseEntity.ok(movieCompletableFuture.join());
     }
 
     @PostMapping("/async")
