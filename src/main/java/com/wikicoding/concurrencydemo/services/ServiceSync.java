@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Service
 @AllArgsConstructor
@@ -33,10 +34,14 @@ public class ServiceSync {
 
     public Movie saveMovie(Movie movie) {
         Movie saved = moviesRepository.save(movie);
+        int totalPartitions = 2;
+        int randomPartition = new Random().nextInt(totalPartitions);
 
         try {
             String jsonConverted = objectMapper.writeValueAsString(saved);
-            template.send("movies-topic", jsonConverted);
+            // null key for random distribution
+            String key = String.valueOf(saved.getMovieId());
+            template.send("movies-topic", randomPartition, key, jsonConverted);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
