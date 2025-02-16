@@ -1,12 +1,12 @@
 package com.wikicoding.concurrencydemo.configs;
 
 import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Component
+@Configuration
 public class AsyncConfig {
 
     @Bean

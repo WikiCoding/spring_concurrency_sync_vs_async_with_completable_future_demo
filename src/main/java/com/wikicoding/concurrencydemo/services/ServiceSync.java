@@ -1,8 +1,11 @@
 package com.wikicoding.concurrencydemo.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wikicoding.concurrencydemo.models.Movie;
 import com.wikicoding.concurrencydemo.repos.MoviesRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -12,6 +15,8 @@ import java.util.List;
 @AllArgsConstructor
 public class ServiceSync {
     private final MoviesRepository moviesRepository;
+    private final KafkaTemplate<String, String> template;
+    private final ObjectMapper objectMapper;
 
     public Iterable<Movie> getAllMovies() {
         return moviesRepository.findAll();
@@ -27,6 +32,15 @@ public class ServiceSync {
     }
 
     public Movie saveMovie(Movie movie) {
-        return moviesRepository.save(movie);
+        Movie saved = moviesRepository.save(movie);
+
+        try {
+            String jsonConverted = objectMapper.writeValueAsString(saved);
+            template.send("movies-topic", jsonConverted);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        return saved;
     }
 }

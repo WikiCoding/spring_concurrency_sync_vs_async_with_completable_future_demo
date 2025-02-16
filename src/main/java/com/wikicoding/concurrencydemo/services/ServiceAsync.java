@@ -42,11 +42,12 @@ public class ServiceAsync implements MoviesService {
 
         execService.submit(() -> {
             long start = System.currentTimeMillis();
-            moviesRepository.save(movie);
+            Movie saved = moviesRepository.save(movie);
             long end = System.currentTimeMillis();
             logger.info("Running on Thread {}", Thread.currentThread().getName());
             logger.info("Movie saved took: {} ms.", end - start);
-            future.complete(movie);
+
+            future.complete(saved);
         });
 
         return future;
