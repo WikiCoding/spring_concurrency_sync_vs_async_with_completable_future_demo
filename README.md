@@ -1,3 +1,68 @@
+# Some explanations
+- Methods Start of a CompletableFuture (for both you can pass an executor service with a thread pool):
+ 1. `.supplyAsync()` - when you want to return the type `T`
+ 2. `.runAsync()` - for return type of `void`
+
+- After you can add a continuation with **Non-blocking** methods of **CompletableFuture**:
+ 1. `.thenAccept(Consumer)` - Executes a function that takes the result of the previous stage, but doesn't return a value itself
+ 2. `.thenApply(Function)` - Executes a function that takes the result and transforms it, returning a new `CompletableFuture`
+ 3. `.thenCompose(Function)` - Similar to `thenApply`, but the function itself returns a `CompletableFuture` (useful for chaining dependent asynchronous operations)
+
+Code example:
+```java
+CompletableFuture<String> task = CompletableFuture.supplyAsync(() -> {
+      try {
+        System.out.println("Waiting at SupplyAsync and running on thread " + Thread.currentThread().getName());
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      return "Hello World";
+  }).thenApply(data -> {
+    System.out.println("Processing data: " + data + " and running on thread " + Thread.currentThread().getName());
+    return data.toUpperCase();
+});
+
+String finalResult = task.get();
+
+System.out.println("Final result: " + finalResult + " and running on thread " + Thread.currentThread().getName());
+
+try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+  CompletableFuture.runAsync(() -> System.out.println("Running a task with executor service"), executorService);
+}
+```
+
+We can also avoid using `CompletableFuture` in spring with the same performance (sometimes better) setting our Tomcat to use a Pool of VirtualThreads like this:
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.boot.web.embedded.tomcat.TomcatProtocolHandlerCustomizer;
+
+import java.util.concurrent.Executors;
+
+@Configuration
+public class VirtualThreadConfig {
+
+    // Enable virtual threads for request handling in Tomcat (Spring MVC)
+    @Bean
+    public TomcatProtocolHandlerCustomizer<?> protocolHandlerVirtualThreads() {
+        return protocolHandler -> 
+            protocolHandler.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+    }
+
+    // Optional: Executor you can inject in services if you want to still use CompletableFuture with it
+    @Bean
+    public AsyncTaskExecutor virtualThreadExecutor() {
+        var executor = new ThreadPoolTaskExecutor();
+        executor.setVirtualThreads(true); // Spring Boot 3.2+ supports this
+        executor.initialize();
+        return executor;
+    }
+}
+```
+
 # Sync get run execution results (2min test)
 ```bash
      checks.........................: 99.84% 7941 out of 7953
